@@ -1,0 +1,74 @@
+// Copyright (C) 1991-2013 Altera Corporation
+// Your use of Altera Corporation's design tools, logic functions 
+// and other software and tools, and its AMPP partner logic 
+// functions, and any output files from any of the foregoing 
+// (including device programming or simulation files), and any 
+// associated documentation or information are expressly subject 
+// to the terms and conditions of the Altera Program License 
+// Subscription Agreement, Altera MegaCore Function License 
+// Agreement, or other applicable license agreement, including, 
+// without limitation, that your use is for the sole purpose of 
+// programming logic devices manufactured by Altera and sold by 
+// Altera or its authorized distributors.  Please refer to the 
+// applicable agreement for further details.
+
+// *****************************************************************************
+// This file contains a Verilog test bench template that is freely editable to  
+// suit user's needs .Comments are provided in each section to help the user    
+// fill out necessary details.                                                  
+// *****************************************************************************
+// Generated on "07/21/2023 01:44:01"
+                                                                                
+// Verilog Test Bench template for design : FPU_AXI4
+// 
+// Simulation tool : ModelSim-Altera (Verilog)
+// 
+
+`timescale 1 us/ 1 us
+module FPU_AXI4_vlg_tst();
+// constants                                           
+// general purpose registers
+// test vector input registers
+reg ACLK;
+reg ARESETn;
+reg [7:0] operation;
+// wires                                               
+wire [31:0]  result;
+wire [1:0] state; 
+wire aw_ready, aw_valid;
+reg [31:0] counter;
+// assign statements (if any)                          
+FPU_AXI4 i1 (
+// port map - connection between master ports and signals/registers   
+	.ACLK(ACLK),
+	.ARESETn(ARESETn),
+	.operation(operation),
+	.result(result),
+	.state(state),
+	.aw_ready(aw_ready),
+	.aw_valid(aw_valid)
+);
+initial                                                
+begin                                                  
+// code that executes only once                        
+// insert code here --> begin                          
+   ARESETn <= 1'b0;
+	operation <= 8'b0;
+	counter <= 32'b0;
+	ACLK <= 1'b0;
+#40 ARESETn <= 1'b1;
+forever #5 ACLK <= ~ACLK; 	
+// --> end                                                                    
+end                                                    
+always @(ACLK)                                                
+// optional sensitivity list                           
+// @(event1 or event2 or .... eventn)                  
+begin                                                  
+// code executes for every event on sensitivity list   
+// insert code here --> begin                          
+      counter <= counter + 1;
+		if(counter == 100) operation <= 8'h02;
+// --> end                                             
+end                                                    
+endmodule
+
