@@ -274,8 +274,8 @@ if(!ARESETn)
 	end
 	else
 	begin
-		op1 <= {12'b010000001100, 20'd0};
-		op2 <= {12'b010000010010, 20'd0};
+		op1 <= {9'b010000001, 3'b010, 20'd0};
+		op2 <= {9'b010000010,3'b100, 20'd0};
 		if(!read_or_write) begin
 		case(state)
 			2'b00 : begin
@@ -378,9 +378,16 @@ module AXI4_slave_FPU(
 	output [1:0] RRESP,
 	output RLAST,
 	output RVALID,
-	input RREADY
+	input RREADY,
+	output [2:0] clken,
+	output divready,
+	output [7:0] count3,
+	output [23:0] n
 );
 
+assign count3 = counter3;
+assign clken = clk_en;
+assign divready = div_ready;
 reg [2:0] clk_en;
 reg [31:0] op1, op2; 
 reg aw_ready;
@@ -484,14 +491,14 @@ else if(ACLK)
 			w_ready <= w_ready? 1'b0 : 1'b1;
 			op1 <= (counter1 == 8'h01)? WDATA : op1;
 			op2 <= (counter1 == 8'h02)? WDATA : op2;
-			counter1 <= counter1 +8'h01;
+			counter1 <= w_ready? counter1 +8'h01 : counter1;
 		end
 		else if (BREADY)
 		begin
 			b_valid <= (b_valid)? 1'b0 : 1'b1;
 			b_resp <= (operation1 <= 8'h02)? 2'b0 : 2'b11;
 			counter1 <= 8'b0;
-			sign_of_clock <= b_valid? ACLK : sign_of_clock;
+			//sign_of_clock <= b_valid? ACLK : sign_of_clock;
 		end
 		
 		if(ARVALID)
@@ -511,21 +518,23 @@ else if(ACLK)
 		end
 		
 		
-		case (operation1)
+		case (operation2)
 		8'h00 : begin counter3 <= !clk_en[0]? 8'b0 : ACLK? counter3 + 8'h01 : counter3;
-					if(sign_of_clock)
-						   clk_en[0] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h01)? 1'b0 : clk_en[0]; 
-						else
-							clk_en[0] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h02)? 1'b0 : clk_en[0];
+					//if(sign_of_clock)
+						   clk_en[0] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h01)? 1'b0 : clk_en[0];
+							clk_en[2] <= 1'b0;
+						//else
+							//clk_en[0] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h02)? 1'b0 : clk_en[0];
 				end
 		8'h01 : begin counter3 <= counter3;
-						   clk_en[1] <= (BREADY & b_valid)? 1'b1 : !ACLK? 1'b0 : clk_en[1];
+						   clk_en[1] <= (BREADY & b_valid)? 1'b1 : 1'b0;//!ACLK? 1'b0 : clk_en[1];
+							clk_en[2] <= 1'b0;
 				end
-		8'h02 : begin counter3 <= !clk_en[2]? 8'b0 : (ACLK & div_ready)? counter3 + 8'h01 : counter3;
-					if(sign_of_clock)
-						   clk_en[2] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h02)? 1'b0 : clk_en[2];
-					else 
-							clk_en[2] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h03)? 1'b0 : clk_en[2];
+		8'h02 : begin counter3 <= !clk_en[2]? 8'b0 : div_ready? {6'b0,counter3[0], counter3[0]} : 8'h01;
+					//if(sign_of_clock)
+						   clk_en[2] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h03)? 1'b0 : clk_en[2];
+					//else 
+						//	clk_en[2] <= (BREADY & b_valid)? 1'b1 : (counter3 == 8'h03)? 1'b0 : clk_en[2];
 				end
 		default : begin counter3 <= 8'b0; clk_en <= 3'b0; end
 		endcase 
